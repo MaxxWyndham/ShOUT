@@ -83,18 +83,27 @@ namespace ShOUT
 
                     for (int i = 0; i < faceCount; i++)
                     {
-                        _ = br.ReadBytes(0x6);
+                        Screamer3DXFace face = new();
+
+                        _ = br.ReadBytes(0x4);
+                        face.MaterialId = br.ReadInt16() / 16;
+
                         int nVerts = br.ReadInt16();
-                        List<int> verts = [];
 
                         for (int j = 0; j <= nVerts; j++)
                         {
-                            verts.Add(br.ReadInt16() / 6);
+                            face.Vertices.Add(br.ReadInt16() / 6);
                         }
 
-                        lod.Faces.Add(verts);
+                        lod.Faces.Add(face);
 
-                        _ = br.ReadBytes(0x1c - (verts.Count * 2));
+                        _ = br.ReadBytes(0x1c - (face.Vertices.Count * 2));
+                        //int z = (0x1c - (face.Vertices.Count * 2)) / 2;
+
+                        //for (int j = 0; j < z; j++)
+                        //{
+                        //    Console.WriteLine($"{br.BaseStream.Position:x2} => {br.ReadUInt16()}");
+                        //}
                     }
 
                     _ = br.ReadBytes(0x24); // null
@@ -189,12 +198,19 @@ namespace ShOUT
     {
         public string Name { get; set; }
 
-        public List<List<int>> Faces { get; set; } = [];
+        public List<Screamer3DXFace> Faces { get; set; } = [];
 
         public List<Vector3> Vertices { get; set; } = [];
 
         public List<Vector3> Normals { get; set; } = [];
 
         public List<Vector3> UVs { get; set; } = [];
+    }
+
+    public class Screamer3DXFace
+    {
+        public int MaterialId { get; set; }
+
+        public List<int> Vertices { get; set; } = [];
     }
 }

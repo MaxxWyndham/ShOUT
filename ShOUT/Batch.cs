@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing.Imaging;
+﻿using System.Drawing.Imaging;
 using System.Numerics;
-using System.Text;
+using System.Reflection.Emit;
 using System.Xml.Linq;
 
 namespace ShOUT
@@ -48,7 +46,8 @@ namespace ShOUT
 
                     for (int j = 0; j < entry.Offsets.Count; j++)
                     {
-                        entry.ToBitmap(col.Palette).Save(Path.Combine(item.DirectoryName, $"{Path.GetFileNameWithoutExtension(item.Name)}-{i}-{j}.png"), ImageFormat.Png);
+                        //entry.ToBitmap(col.Palette).Save(Path.Combine(item.DirectoryName, $"{Path.GetFileNameWithoutExtension(item.Name)}-{i}-{j}.png"), ImageFormat.Png);
+                        entry.ToBitmap(col.Palette).Save(Path.Combine(item.DirectoryName, $"{i}-{j}.png"), ImageFormat.Png);
                     }
                 }
             }
@@ -60,10 +59,17 @@ namespace ShOUT
 
                 Screamer3DX threedx = Screamer3DX.Load(item.FullName);
 
+                string meshName = $"{Path.GetFileNameWithoutExtension(item.FullName)}";
+                List<string> materials = [];
+
                 foreach (int level in threedx.LODs.Keys)
                 {
-                    using TextWriter tw = new StreamWriter($@"{Path.Combine(Path.GetDirectoryName(item.FullName), Path.GetFileNameWithoutExtension(item.FullName))}-{level}.obj");
+                    using TextWriter tw = new StreamWriter($@"{Path.Combine(Path.GetDirectoryName(item.FullName), meshName)}-{level}.obj");
+
+                    tw.WriteLine($"mtllib {meshName}.MTL");
+
                     int vOffset = 0;
+                    int lastMaterialId = -1;
 
                     foreach (Screamer3DXLOD lod in threedx.LODs[level])
                     {
@@ -71,20 +77,52 @@ namespace ShOUT
 
                         foreach (Vector3 v in lod.Vertices)
                         {
-                            tw.WriteLine($"v {v.X} {v.Y} {v.Z} 1");
+                            tw.WriteLine($"v {-v.X} {v.Y} {v.Z} 1");
                         }
 
-                        foreach (List<int> verts in lod.Faces)
+                        foreach (Vector3 uv in lod.UVs)
                         {
-                            tw.Write($"f");
-                            foreach (int v in verts)
+                            tw.WriteLine($"vt {uv.X / 255f} -{uv.Y / 255f}");
+                        }
+
+                        foreach (Screamer3DXFace face in lod.Faces)
+                        {
+                            if (face.MaterialId != lastMaterialId)
                             {
-                                tw.Write($" {v + 1 + vOffset}");
+                                string materialName = $"m{face.MaterialId}";
+
+                                tw.WriteLine($"usemtl {materialName}");
+
+                                if (materials.IndexOf(materialName) < 0) { materials.Add(materialName); }
+
+                                lastMaterialId = face.MaterialId;
+                            }
+
+                            tw.Write($"f");
+                            foreach (int v in face.Vertices)
+                            {
+                                tw.Write($" {v + 1 + vOffset}/{v + 1 + vOffset}");
                             }
                             tw.WriteLine();
                         }
 
                         vOffset += lod.Vertices.Count;
+                    }
+
+                    tw.Close();
+                }
+
+                if (materials.Count > 0)
+                {
+                    using TextWriter tw = new StreamWriter($@"{Path.Combine(Path.GetDirectoryName(item.FullName), meshName)}.mtl");
+
+                    foreach (string material in materials)
+                    {
+                        tw.WriteLine($"newmtl {material}");
+                        tw.WriteLine("Ka 1.000000 1.000000 1.000000");
+                        tw.WriteLine("Kd 1.000000 1.000000 1.000000");
+                        tw.WriteLine("Ks 0.000000 0.000000 0.000000");
+                        tw.WriteLine($"map_Kd {material[1..]}-0.png");
                     }
 
                     tw.Close();
