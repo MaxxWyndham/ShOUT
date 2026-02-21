@@ -47,7 +47,7 @@ namespace ShOUT
                     for (int j = 0; j < entry.Offsets.Count; j++)
                     {
                         //entry.ToBitmap(col.Palette).Save(Path.Combine(item.DirectoryName, $"{Path.GetFileNameWithoutExtension(item.Name)}-{i}-{j}.png"), ImageFormat.Png);
-                        entry.ToBitmap(col.Palette).Save(Path.Combine(item.DirectoryName, $"{i}-{j}.png"), ImageFormat.Png);
+                        entry.ToBitmap(j, col.Palette).Save(Path.Combine(item.DirectoryName, $"{i}-{j}.png"), ImageFormat.Png);
                     }
                 }
             }
@@ -77,7 +77,7 @@ namespace ShOUT
 
                         foreach (Vector3 v in lod.Vertices)
                         {
-                            tw.WriteLine($"v {-v.X} {v.Y} {v.Z} 1");
+                            tw.WriteLine($"v {-v.X - lod.Position.X} {v.Y + lod.Position.Y} {v.Z + lod.Position.Z} 1");
                         }
 
                         foreach (Vector3 uv in lod.UVs)

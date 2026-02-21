@@ -85,7 +85,7 @@ namespace ShOUT
 
         public List<byte[]> Data { get; set; } = [];
 
-        public Bitmap ToBitmap(List<Color> palette)
+        public Bitmap ToBitmap(int offset, List<Color> palette)
         {
             Bitmap bmp = new(Width, Height, PixelFormat.Format32bppArgb);
             BitmapData bmpdata = bmp.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
@@ -96,7 +96,7 @@ namespace ShOUT
             {
                 for (int x = 0; x < 256; x++)
                 {
-                    byte index = Data[0][y * 256 + x];
+                    byte index = Data[offset][y * 256 + x];
 
                     if (x < Width)
                     {

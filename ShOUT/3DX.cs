@@ -43,7 +43,7 @@ namespace ShOUT
                 _ = br.ReadUInt32(); // null
             }
 
-            for (int level = 1; level <= 3; level++)
+            for (int level = 1; level <= 1; level++)
             {
                 threedx.LODs[level] = [];
 
@@ -53,6 +53,8 @@ namespace ShOUT
                 {
                     br.BaseStream.Seek(offset, SeekOrigin.Begin);
 
+                    Console.WriteLine($":: {br.BaseStream.Position:x2} ::");
+
                     Screamer3DXLOD lod = new();
 
                     Console.WriteLine($"{br.ReadInt32()}");
@@ -60,19 +62,29 @@ namespace ShOUT
                     Console.WriteLine(br.ReadInt16());
                     Console.WriteLine(br.ReadInt16());
                     Console.WriteLine(br.ReadInt16());
-                    Console.WriteLine(br.ReadInt32());
 
+                    int unknownOffset = br.ReadInt32();
                     int vertexCount = br.ReadInt32();
                     int faceCount = br.ReadInt32();
 
                     Console.WriteLine($"Vertex Count: {vertexCount}");
                     Console.WriteLine($"Face Count: {faceCount}");
 
-                    for (int i = 0; i < 20; i++)
+                    int unk1 = br.ReadInt32();
+
+                    Console.WriteLine($"{unk1} :: {unk1:x2}");
+
+                    int vertexOffset = br.ReadInt32();
+                    int normalOffset = br.ReadInt32();
+                    int uvOffset = br.ReadInt32();
+
+                    // 16 offsets/lengths of something, the step between them is consistent for a given 3dx but different between 3dx files
+                    // the fact there are 16 would suggest it is linked to the data set near the end of the file that also loops 16 times?
+                    for (int i = 0; i < 16; i++)
                     {
                         int n = br.ReadInt32();
 
-                        Console.WriteLine($"{n} :: {n:x2}");
+                        //Console.WriteLine($"{i} : {n} :: {n:x2}");
                     }
 
                     lod.Name = br.ReadString(16);
@@ -108,8 +120,7 @@ namespace ShOUT
 
                     _ = br.ReadBytes(0x24); // null
 
-                    Console.WriteLine($":: {br.BaseStream.Position:x2} ::");
-                    // BaseStream.Position == i:1 above
+                    Console.WriteLine($":: {br.BaseStream.Position:x2} == {vertexOffset:x2} ::");
 
                     for (int i = 0; i < vertexCount; i++)
                     {
@@ -120,12 +131,10 @@ namespace ShOUT
 
                     _ = br.ReadBytes(0x6); // 0xff7f 0xff7f 0xff7f
 
-                    Console.WriteLine($":[ {br.BaseStream.Position % 4} ]:");
 
-                    _ = br.ReadBytes((int)(br.BaseStream.Position % 4)); // null
+                    _ = br.ReadBytes((int)(br.BaseStream.Position % 4)); // padding to realign data
 
-                    Console.WriteLine($":: {br.BaseStream.Position:x2} ::");
-                    // BaseStream.Position == i:2 above
+                    Console.WriteLine($":: {br.BaseStream.Position:x2} == {normalOffset:x2} ::");
 
                     int normalCount = br.ReadInt32();
 
@@ -144,8 +153,7 @@ namespace ShOUT
 
                     _ = br.ReadBytes(0x4); // null
 
-                    Console.WriteLine($":: {br.BaseStream.Position:x2} ::");
-                    // BaseStream.Position == i:3 above
+                    Console.WriteLine($":: {br.BaseStream.Position:x2} == {uvOffset:x2} ::");
 
                     // U V MaterialIndex?
                     for (int i = 0; i < vertexCount; i++)
@@ -154,12 +162,9 @@ namespace ShOUT
                     }
 
                     _ = br.ReadBytes(0x6); // 0xffff 0xffff 0xffff
-                    _ = br.ReadBytes(0x2); // null
+                    _ = br.ReadBytes(0x6); // null
 
                     Console.WriteLine($":: {br.BaseStream.Position:x2} ::");
-                    // BaseStream.Position == i:11 above
-
-                    _ = br.ReadBytes(4); // null
 
                     for (int i = 0; i < 16; i++)
                     {
@@ -179,8 +184,15 @@ namespace ShOUT
                         //Console.WriteLine();
                     }
 
-                    Console.WriteLine($":: {br.BaseStream.Position:x2} ::");
-                    // BaseStream.Position == unknown1
+                    Console.WriteLine($":: {br.BaseStream.Position:x2} == {unknownOffset:x2} ::");
+
+                    int unkA = br.ReadInt32();
+                    int unkB = br.ReadInt32();
+                    int unkC = br.ReadInt32();
+                    int unkD = br.ReadInt32();
+                    lod.Position = new(br.ReadInt32(), br.ReadInt32(), br.ReadInt32());
+                    int unkE = br.ReadInt32();
+                    int unkF = br.ReadInt32();
 
                     Console.WriteLine();
 
@@ -205,6 +217,8 @@ namespace ShOUT
         public List<Vector3> Normals { get; set; } = [];
 
         public List<Vector3> UVs { get; set; } = [];
+
+        public Vector3 Position { get; set; }
     }
 
     public class Screamer3DXFace
